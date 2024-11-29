@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 # Load the environment variables from .env file
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
 # Set up the OpenAI API key
 api_key = os.getenv("OPENAI_API_KEY")
 
@@ -26,18 +25,31 @@ def get_python_code_from_chatgpt(prompt):
         # Extract the generated code from the response
         code = response.choices[0].message.content.strip()
 
-        # Clean up the markdown formatting (remove the backticks)
+        # Remove the backticks
         cleaned_code = code.replace("```python", "").replace("```", "").strip()
 
-        # Print only the generated Python code
-        print("Generated Python Code:")
         print(cleaned_code)
+        print()
+    
+        # Save the cleaned code to a file
+        save_code_to_file(cleaned_code)
 
         return cleaned_code
 
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
+
+
+def save_code_to_file(code, filename="generatedcode.py"):
+    """Save the generated Python code to a file."""
+    try:
+        with open(filename, "w") as f:
+            f.write(code)
+        print(f"Code has been written to {filename}")
+        print()
+    except Exception as e:
+        print(f"Error writing to file: {e}")
 
 
 if __name__ == "__main__":
@@ -47,5 +59,5 @@ if __name__ == "__main__":
         "Do not write any explanations, just show me the code itself."
     )
 
-    # Get the Python code from ChatGPT
+    # Get the Python code from ChatGPT and save it to a file
     get_python_code_from_chatgpt(prompt)
