@@ -28,8 +28,9 @@ def get_python_code_from_chatgpt(prompt):
         # Remove the backticks
         cleaned_code = code.replace("```python", "").replace("```", "").strip()
 
+        # Print the generated code
+        print("Generated Python Code:")
         print(cleaned_code)
-        print()
     
         # Save the cleaned code to a file
         save_code_to_file(cleaned_code)
@@ -47,16 +48,21 @@ def save_code_to_file(code, filename="generatedcode.py"):
         with open(filename, "w") as f:
             f.write(code)
         print(f"Code has been written to {filename}")
-        print()
     except Exception as e:
         print(f"Error writing to file: {e}")
 
 
 if __name__ == "__main__":
-    # Define your prompt
+    # Define your updated prompt
     prompt = (
-        "Create a python program that checks if a number is prime. "
-        "Do not write any explanations, just show me the code itself."
+        "Create a Python program that checks if a number is prime. "
+        "Do not write any explanations, just show me the code. "
+        "The code should be saved to a file named `generatedcode.py` and "
+        "printed to the console. "
+        "Also include running unit tests with asserts that check the logic of"
+        "the program. "
+        "Make sure to also check interesting edge cases."
+        "There should be at least 10 different unit tests."
     )
 
     # Get the Python code from ChatGPT and save it to a file
