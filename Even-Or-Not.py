@@ -55,10 +55,9 @@ def save_code_to_file(code, filename="generatedcode.py"):
 if __name__ == "__main__":
     # Define your updated prompt
     prompt = (
-        "Create a Python program that checks if a number is prime. "
+        "Create a Python program that checks if a number is even. "
         "Do not write any explanations, just show me the code. "
-        "The code should be saved to a file named `generatedcode.py` and "
-        "printed to the console. "
+        "The code should be saved to a new file called `generatedcode.py`."
         "Also include running unit tests with asserts that check the logic of"
         "the program. "
         "Make sure to also check interesting edge cases."
