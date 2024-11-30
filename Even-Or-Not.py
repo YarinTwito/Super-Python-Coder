@@ -31,7 +31,7 @@ def get_python_code_from_chatgpt(prompt):
         # Print the generated code
         print("Generated Python Code:")
         print(cleaned_code)
-    
+
         # Save the cleaned code to a file
         save_code_to_file(cleaned_code)
 
