@@ -5,7 +5,9 @@ import openai
 import os
 import time
 from dotenv import load_dotenv
-from alive_progress import alive_bar
+from colorama import Fore, Style, init
+from tqdm import tqdm
+init(autoreset=True)
 
 # Load the environment variables from .env file
 load_dotenv()
@@ -38,7 +40,6 @@ PROGRAMS_LIST = [
     ABC
     ACB
     CAB ''',
-
 
     # Second program idea
     "A program that checks if a number is a palindrome",
@@ -76,7 +77,6 @@ PROGRAMS_LIST = [
     s and goal consist of lowercase English letters.''',
 ]
 
-
 def get_python_code_from_chatgpt(prompt):
     try:
         # Requesting chat completion with the correct client structure
@@ -84,15 +84,15 @@ def get_python_code_from_chatgpt(prompt):
             messages=[
                 {"role": "user", "content": prompt}
             ],
-            model="gpt-4o-mini",  # Use the gpt-4-mini model
+            model="gpt-4o-mini",
         )
 
         # Extract the generated code from the response
         code = response.choices[0].message.content.strip()
-        if "```python" in code:
-            code = code.split("```python")[1].split("```")[0].strip()
-        elif "```" in code:
-            code = code.split("```")[1].split("```")[0].strip()
+        if "python" in code:
+            code = code.split("python")[1].split("")[0].strip()
+        elif "" in code:
+            code = code.split("")[1].split("")[0].strip()
 
         return code
     except Exception as e:
@@ -116,9 +116,21 @@ def save_code_to_file(code, filename="Requsted-code.py"):
         print(f"Error running generated code! Error: {e}")
         return None
 
+def run_lint_check(filename):
+    """Run pylint on the given file and return the result."""
+    try:
+        result = subprocess.run(
+            ["pylint", filename],
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout, result.returncode
+    except Exception as e:
+        print(f"{Fore.RED}Error running pylint: {e}")
+        return "", 1
 
 def main():
-    print("I’m Super Python Coder. Tell me, which program would you like me "
+    print(f"{Fore.GREEN}I’m Super Python Coder. Tell me, which program would you like me "
           "to code for you?")
     print("If you don't have an idea, just press enter and "
           "I will choose a random program to code.")
@@ -142,55 +154,35 @@ def main():
         "Also include running unit tests with asserts that check the logic of"
         "the program. Make sure to also check edge cases."
     )
-    with alive_bar(5, title="Code Generation Progress") as bar:  # 5 attempts
-        for attempt in range(5):
-            print(f"\nAttempt {attempt + 1} to generate and run the code...")
+    with tqdm(total=3, desc="Lint Fixing Progress") as progress_bar:
+        for attempt in range(3):
+            print(f"{Fore.CYAN}Attempt {attempt + 1} to generate and lint the code...")
 
             code = get_python_code_from_chatgpt(prompt)
             if not code:
-                print("Failed to generate code from OpenAI. Exiting.")
+                print(f"{Fore.RED}Failed to generate code from OpenAI. Exiting.")
                 break
 
-            execution_time_before = save_code_to_file(code)
-            if execution_time_before is None:
-                print("Error running generated code! Trying again...")
+            # Save the code and run lint check
+            filename = "best_version.py"
+            save_code_to_file(code, filename)
+            print(f"{Fore.GREEN}Code saved to {filename}. Running lint check...")
+
+            lint_output, lint_status = run_lint_check(filename)
+
+            if lint_status == 0:
+                print(f"{Fore.GREEN}Amazing. No lint errors/warnings!")
+                break
             else:
-                print("Code created successfully!")
-                bar(5)
-
-                # Request optimized code from OpenAI
-                print("\nRequesting optimized code...")
-                optimized_prompt = prompt + (
-                    "\nImprove the performance of the code to run faster."
+                print(f"{Fore.YELLOW}Lint warnings/errors detected:\n{lint_output}")
+                prompt = (
+                    f"Fix the following code to resolve linting issues:\n{code}\n"
+                    f"Lint output:\n{lint_output}"
                 )
-                optimized_code = get_python_code_from_chatgpt(optimized_prompt)
-
-                if optimized_code:
-                    print("\nOptimized code generated. Saving to file...")
-                    execution_time_after = save_code_to_file(optimized_code)
-
-                    if execution_time_after is None:
-                        print("Error running optimized code!")
-                    else:
-                        # Compare execution times
-                        if execution_time_after < execution_time_before:
-                            print(
-                                f"Code running time optimized! It now runs in "
-                                f"{execution_time_after:.2f} milliseconds, "
-                                f"while before it was "
-                                f"{execution_time_before:.2f} milliseconds"
-                            )
-                        else:
-                            print("The optimized code didn't improve the "
-                                  "performance.")
-                break
-
-            # Update progress bar after each attempt
-            bar()
-
+                progress_bar.update(1)
         else:
-            print("Code generation FAILED after 5 attempts.")
+            print(f"{Fore.RED}There are still lint errors/warnings after 3 attempts.")
 
 
 if __name__ == "__main__":
-    main()
+    main() 
