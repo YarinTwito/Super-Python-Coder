@@ -1,4 +1,4 @@
-# Super-Python-Coder.py
+# super_python_coder.py
 import random
 import subprocess
 import openai
@@ -8,16 +8,12 @@ from dotenv import load_dotenv
 from colorama import Fore, Style, init
 from tqdm import tqdm
 init(autoreset=True)
-
 # Load the environment variables from .env file
 load_dotenv()
-
 # Set up the OpenAI API key
 api_key = os.getenv("OPENAI_API_KEY")
-
 # Initialize the OpenAI client
 client = openai.OpenAI(api_key=api_key)
-
 # Constant list of program ideas
 PROGRAMS_LIST = [
     # First program idea
@@ -33,7 +29,6 @@ PROGRAMS_LIST = [
     CABD
     CADB
     CDAB
-
     Example 2:
     Input: str1 = "AB", str2 = "C"
     Output:
@@ -55,7 +50,6 @@ PROGRAMS_LIST = [
     Example 1:
     Input: mat = [[1,2,3],[4,5,6],[7,8,9]]
     Output: [1,2,4,7,5,3,6,8,9]
-
     Example 2:
     Input: mat = [[1,2],[3,4]]
     Output: [1,2,3,4] '''
@@ -77,6 +71,7 @@ PROGRAMS_LIST = [
     s and goal consist of lowercase English letters.''',
 ]
 
+
 def get_python_code_from_chatgpt(prompt):
     try:
         # Requesting chat completion with the correct client structure
@@ -89,22 +84,28 @@ def get_python_code_from_chatgpt(prompt):
 
         # Extract the generated code from the response
         code = response.choices[0].message.content.strip()
-        if "python" in code:
-            code = code.split("python")[1].split("")[0].strip()
-        elif "" in code:
-            code = code.split("")[1].split("")[0].strip()
 
+        if "```python" in code:
+            code = code.split("```python")[1].split("```")[0].strip()
+        elif "```" in code:
+            code = code.split("```")[1].split("```")[0].strip()
         return code
     except Exception as e:
         print(f"Error communicating with OpenAI: {e}")
         return None
 
 
-def save_code_to_file(code, filename="Requsted-code.py"):
+def save_code_to_file(code, filename="Requested-code.py"):
     """Save the generated Python code to a file."""
+    cleaned_code = '\n'.join(line.rstrip() for line in code.splitlines())
+
+    if not cleaned_code.endswith("\n"):
+        cleaned_code += "\n"
+
     with open(filename, "w") as f:
         f.write(f"# {filename}\n")
-        f.write(code)
+        f.write(cleaned_code)
+
     try:
         start_time = time.time()  # Measure time before running the code
         subprocess.run(["python3", filename], check=True)
@@ -116,6 +117,7 @@ def save_code_to_file(code, filename="Requsted-code.py"):
         print(f"Error running generated code! Error: {e}")
         return None
 
+
 def run_lint_check(filename):
     """Run pylint on the given file and return the result."""
     try:
@@ -125,15 +127,18 @@ def run_lint_check(filename):
             text=True,
         )
         return result.stdout, result.returncode
+
     except Exception as e:
         print(f"{Fore.RED}Error running pylint: {e}")
         return "", 1
 
+
 def main():
-    print(f"{Fore.GREEN}I’m Super Python Coder. Tell me, which program would you like me "
-          "to code for you?")
+    print(f"{Fore.GREEN}I’m Super Python Coder. Tell me, which program would "
+          "you like me to code for you?")
     print("If you don't have an idea, just press enter and "
           "I will choose a random program to code.")
+
     # Get user input
     user_input = input("Your program idea: ").strip()
 
@@ -154,19 +159,23 @@ def main():
         "Also include running unit tests with asserts that check the logic of"
         "the program. Make sure to also check edge cases."
     )
+
     with tqdm(total=3, desc="Lint Fixing Progress") as progress_bar:
         for attempt in range(3):
-            print(f"{Fore.CYAN}Attempt {attempt + 1} to generate and lint the code...")
-
+            print(f"{Fore.CYAN}Attempt {attempt + 1} to generate and "
+                  "lint the code...")
             code = get_python_code_from_chatgpt(prompt)
+
             if not code:
-                print(f"{Fore.RED}Failed to generate code from OpenAI. Exiting.")
+                print(f"{Fore.RED}Failed to generate code from OpenAI. "
+                      "Exiting.")
                 break
 
             # Save the code and run lint check
             filename = "best_version.py"
             save_code_to_file(code, filename)
-            print(f"{Fore.GREEN}Code saved to {filename}. Running lint check...")
+            print(f"{Fore.GREEN}Code saved to {filename}. "
+                  "Running lint check...")
 
             lint_output, lint_status = run_lint_check(filename)
 
@@ -174,15 +183,18 @@ def main():
                 print(f"{Fore.GREEN}Amazing. No lint errors/warnings!")
                 break
             else:
-                print(f"{Fore.YELLOW}Lint warnings/errors detected:\n{lint_output}")
+                print(f"{Fore.YELLOW}Lint warnings/errors detected:\n"
+                      f"{lint_output}")
                 prompt = (
-                    f"Fix the following code to resolve linting issues:\n{code}\n"
+                    f"Fix the following code to resolve linting issues:\n"
+                    f"{code}\n"
                     f"Lint output:\n{lint_output}"
                 )
                 progress_bar.update(1)
         else:
-            print(f"{Fore.RED}There are still lint errors/warnings after 3 attempts.")
+            print(f"{Fore.RED}There are still lint errors/warnings "
+                  "after 3 attempts.")
 
 
 if __name__ == "__main__":
-    main() 
+    main()
